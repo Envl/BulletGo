@@ -41,6 +41,8 @@ class Bullet:
 		if(ratio>0.9):
 			return True
 		pos=ratio*self.EndPosition+(1-ratio)*self.StartPosition
+		#这里需要插入绘制字体阴影的代码
+		#
 		painter.save()
 		painter.setPen(QPen(self.Color))
 		painter.drawText(pos,self.Text)

@@ -1,25 +1,28 @@
 import sys
 from PyQt5 import QtCore, QtGui, uic,QtWidgets
-from PyQt5.QtCore import Qt,QObject
-from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import Qt,QObject,QUrl
+from PyQt5.QtCore import QPoint,QByteArray
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPainter,QFont
 from PyQt5.QtGui import QColor 
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import QPushButton,QDesktopWidget
+from PyQt5.QtWidgets import QPushButton,QDesktopWidget,QPlainTextEdit
 from BulletGo import Bullet
 import random,GLOBAL
+from PyQt5.QtNetwork import QNetworkRequest,QNetworkAccessManager
+import requests
 
-qtCreatorFile="ui.ui"
+# qtCreatorFile="ui.ui"
 
-Ui_MainWindow, QtBaseClass=uic.loadUiType(qtCreatorFile)
+# Ui_MainWindow, QtBaseClass=uic.loadUiType(qtCreatorFile)
 
-class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
+# class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
+class MyApp(QtWidgets.QMainWindow):
 	mouseLeaveTimer=0
 
 	def __init__(self):
 		QtWidgets.QMainWindow.__init__(self)
-		Ui_MainWindow.__init__(self)
+		# Ui_MainWindow.__init__(self)
 		#自己有__init__函数时,不会默认调用基类的__init__函数
 		# 因为这里重写了__init__将基类的覆盖掉了,故需要主动调用之
 		super(MyApp,self).__init__()
@@ -30,15 +33,15 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 		self.bgColor=QColor(66,66,66,88)
 		
 		#
-		self.setupUi(self)
+		# self.setupUi(self)
 		self.initUI();
 		#用来控制半透明的bg面板自动消失
 		self.timer=QTimer()
 		self.timer.start(30)
 		self.setGeometry(0,30,self.screenWidth,self.screenHeight/4)
 
-		self.creatConnections()
-		#Flags
+		self.createConnections()
+		#Flagsq
 		self.IsMouseHover=False
 		self.MouseOver=False
 		#变量初始化
@@ -47,6 +50,10 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 		self.bullets=[]
 		self.dragPos=QPoint(22,22)
 
+	
+	def pullMsg(self):
+		pass
+
 	def fireBtn(self):
 		txt=self.plainTextEdit.toPlainText()
 		tmpbullet=Bullet(txt,GLOBAL.ORANGE,random.randrange(16,22,2))
@@ -54,9 +61,10 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 		tmpbullet.prepare()
 		print(len(self.bullets))
 
-	def creatConnections(self):
+	def createConnections(self):
 		self.timer.timeout.connect(self.update)
 		self.btnFire.clicked.connect(self.fireBtn)
+		self.createBtn.clicked.connect(self.createRoom)
 
 	def initUI(self):
 		#构建托盘
@@ -67,6 +75,8 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 			|Qt.WindowStaysOnTopHint|Qt.Window)
 		#Plan A
 		self.setAttribute(Qt.WA_TranslucentBackground,True)
+		#这一句是给Mac系统用的,防止它绘制(很黯淡的)背景
+		self.setAutoFillBackground(False)
 		#Plan B  失败
 		# palette=QPalette()
 		# color=QColor(190, 230, 250)
@@ -75,7 +85,37 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 		# self.setPalette(palette)
 		# self.setAutoFillBackground(True)
 		# self.setBackgroundRole(QPalette.Window)
+
+		#创建房间的Button和 输入框
+		self.createBtn=QPushButton("创建",self)
+		self.createBtn.resize(60,30)
+		self.move(100,200)
+		self.createBtn.show()
+
+		self.btnFire=QPushButton("Fire",self)
+		self.btnFire.resize(60,60)
+		self.btnFire.move(100,30)
+		self.btnFire.show()
+
+		self.btnLock=QPushButton("Lock",self)
+		self.btnLock.resize(40,40)
+		self.btnLock.move(self.screenWidth/2,30)
+		self.btnLock.show()
+
+		self.roomName=QPlainTextEdit(self)
+		self.roomName.resize(100,50)
+		self.roomName.move(0,200)
+		self.roomName.setBackgroundVisible(False)
+		self.roomName.show()
 	
+	def createRoom(self):
+		postData="#0JNU"
+		r = requests.post('http://danmaku.applinzi.com',data=postData)
+		# print(r.text)
+		self.roomName.setPlaceholderText(r.text)
+		print(r.encoding)
+		
+
 	def mousePressEvent(self,e):
 		if e.button()==Qt.LeftButton: 
 			# self.dragPos=e.globalPos()-self.frameGeometry().topLeft()
