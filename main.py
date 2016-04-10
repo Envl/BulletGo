@@ -4,9 +4,10 @@ from PyQt5.QtCore import Qt,QObject,QUrl
 from PyQt5.QtCore import QPoint,QByteArray
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPainter,QFont
-from PyQt5.QtGui import QColor 
+from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import QPushButton,QDesktopWidget,QPlainTextEdit
+from PyQt5.QtWidgets import QSystemTrayIcon,QDesktopWidget
+from PyQt5.QtWidgets import QPushButton,QPlainTextEdit,QAction
 from BulletGo import Bullet
 import random,GLOBAL
 from PyQt5.QtNetwork import QNetworkRequest,QNetworkAccessManager
@@ -30,7 +31,7 @@ class MyApp(QtWidgets.QMainWindow):
 		self.screenWidth=QDesktopWidget().availableGeometry().width()
 		self.screenHeight=QDesktopWidget().availableGeometry().height()
 		#  ColorSetting
-		self.bgColor=QColor(66,66,66,88)
+		self.bgColor=QColor(66,66,77,88)
 		
 		#
 		# self.setupUi(self)
@@ -44,6 +45,7 @@ class MyApp(QtWidgets.QMainWindow):
 		#Flagsq
 		self.IsMouseHover=False
 		self.MouseOver=False
+		self.Locked=False
 		#变量初始化
 		GLOBAL.WINDOWWIDTH=self.width()
 		GLOBAL.WINDOWHEIGHT=self.height()
@@ -51,23 +53,16 @@ class MyApp(QtWidgets.QMainWindow):
 		self.dragPos=QPoint(22,22)
 
 	
-	def pullMsg(self):
-		pass
-
-	def fireBtn(self):
-		txt=self.plainTextEdit.toPlainText()
-		tmpbullet=Bullet(txt,GLOBAL.ORANGE,random.randrange(16,22,2))
-		self.bullets.append(tmpbullet)
-		tmpbullet.prepare()
-		print(len(self.bullets))
-
-	def createConnections(self):
-		self.timer.timeout.connect(self.update)
-		self.btnFire.clicked.connect(self.fireBtn)
-		self.createBtn.clicked.connect(self.createRoom)
-
 	def initUI(self):
 		#构建托盘
+		self.trayIcon=QSystemTrayIcon(self)
+		self.trayIcon.setIcon(QtGui.QIcon("icon.png"))
+		self.trayIcon.show()
+		self.trayMenu()
+
+		# 构建菜单
+		action_quit=QAction(self)
+
 
 		self.setWindowTitle("BulletGo")
 		sizeGrip=QtWidgets.QSizeGrip(self)
@@ -103,24 +98,64 @@ class MyApp(QtWidgets.QMainWindow):
 		self.btnLock.show()
 
 		self.roomName=QPlainTextEdit(self)
-		self.roomName.resize(100,50)
-		self.roomName.move(0,200)
+		self.roomName.resize(200,200)
+		self.roomName.move(0,100)
 		self.roomName.setBackgroundVisible(False)
 		self.roomName.show()
+
+		self.danmakuEditText=QPlainTextEdit(self)
+		self.danmakuEditText.resize(200,100)
+		self.danmakuEditText.move(100,100)
+		self.danmakuEditText.setBackgroundVisible(False)
+		self.danmakuEditText.show()
+
+	def fireBtn(self):
+		txt=self.danmakuEditText.toPlainText()
+		tmpbullet=Bullet(txt,GLOBAL.ORANGE,random.randrange(16,22,2))
+		self.bullets.append(tmpbullet)
+		tmpbullet.prepare()
+		print(len(self.bullets))
+
+	def preProcessText(self,string):
+		index=string.find('<script')
+		return string[0:index]
+
+
+	def fireABullet(self,txt,color=GLOBAL.ORANGE):
+		tmpbullet=Bullet(txt,color,random.randrange(12,22,2))
+		self.bullets.append(tmpbullet)
+		tmpbullet.prepare()
+
+	def createConnections(self):
+		self.timer.timeout.connect(self.update)
+		self.btnFire.clicked.connect(self.fireBtn)
+		self.createBtn.clicked.connect(self.createRoom)
+		self.btnLock.clicked.connect(self.switchLock)
+
+	def switchLock(self):
+		self.Locked=not self.Locked
 	
 	def createRoom(self):
-		postData="#0JNU"
+		#编码问题实在天坑!!!
+		postData='#0'.encode('utf-8')
+		postData+=self.roomName.toPlainText().encode('utf-8')
 		r = requests.post('http://danmaku.applinzi.com',data=postData)
-		# print(r.text)
-		self.roomName.setPlaceholderText(r.text)
+		r.encoding='utf-8'
+		# self.roomName.setPlaceholderText(r.text)
+		self.fireABullet(self.preProcessText(r.text))
 		print(r.encoding)
+		# print(r.content)
+		# print(r.text)
 		
 
 	def mousePressEvent(self,e):
 		if e.button()==Qt.LeftButton: 
 			# self.dragPos=e.globalPos()-self.frameGeometry().topLeft()
 			self.dragPos=e.pos()#效果同上,鼠标相对窗口左上角的位置
-			e.accept()
+		else:
+			if e.button()==Qt.RightButton:
+				sys.exit()
+		e.accept()
 
 	def mouseMoveEvent(self,e):
 		if e.buttons()&Qt.LeftButton:
@@ -151,7 +186,7 @@ class MyApp(QtWidgets.QMainWindow):
 		# Get the Painter
 		painter=QPainter(self)
 		#Draw a semi-Transparent rect whose size is the same with this window
-		if(self.IsMouseHover):
+		if(self.IsMouseHover and (not self.Locked)):
 			painter.fillRect(0,0,GLOBAL.WINDOWWIDTH,GLOBAL.WINDOWHEIGHT\
 				,self.bgColor)
 		# painter.setBackground(QBrush(QColor(123,222,123,122)))
