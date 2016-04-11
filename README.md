@@ -2,8 +2,9 @@
 用来显示弹幕的桌面程序
 
 使用效果:
-![Image text](https://github.com/Envl/BulletGo/blob/master/screenShot.png)
-   
+![Image text](https://github.com/Envl/BulletGo/blob/master/screenShot.png)   
+![Image text](https://github.com/Envl/BulletGo/blob/master/intro.png)
+  
       
       
 使用步骤:   
