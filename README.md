@@ -22,9 +22,14 @@
 #下载地址点进去后,点击raw即可下载   
 
 windows系统,下载后运行exe可执行文件   
-  --https://github.com/Envl/BulletGo/blob/master/dist/tmpIcon.ico      
-  --https://github.com/Envl/BulletGo/blob/master/dist/main.exe      
-  --下载以上两个文件,放进同一个文件夹
+  --64位系统:   
+    https://github.com/Envl/BulletGo/blob/master/dist/tmpIcon.ico      
+    https://github.com/Envl/BulletGo/blob/master/dist/main.exe     
+  --下载以上两个文件,放进同一个文件夹   
+  
+  --32位系统:   
+    https://github.com/Envl/BulletGo/tree/master/BulletGo_Win32   
+  
   --请不要删除tmpIcon.ico文件,否则小图标无法显示   
   --出现该提示,点击更多信息--->仍要运行   
 ![Image text](https://github.com/Envl/BulletGo/blob/master/blocked.jpg)
