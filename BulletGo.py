@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt,QObject,QUrl
 from PyQt5.QtCore import QPoint,QByteArray
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPainter,QFont
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor,QPicture
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QSystemTrayIcon,QDesktopWidget,QHBoxLayout,QVBoxLayout
 from PyQt5.QtWidgets import QPushButton,QPlainTextEdit,QAction,QWidget,QLineEdit
@@ -62,6 +62,9 @@ class MyApp(QtWidgets.QMainWindow):
 		self.bullets=[]
 		self.dragPos=QPoint(22,22)
 		self.savedName=''
+		# self.screenBuffer=QBitmap(GLOBAL.WINDOWWIDTH,GLOBAL.WINDOWHEIGHT)
+		# self.bufferPainter=QPainter(self.screenBuffer)
+		self.picture=QPicture()
 		# 建立connection和slot的连接
 		self.createConnections()
 
@@ -78,7 +81,7 @@ class MyApp(QtWidgets.QMainWindow):
 		action_quit.triggered.connect(self.exitApp)
 		action_switchLock=QAction('锁定/解锁(F6)',self)
 		action_switchLock.triggered.connect(self.switchLock)
-		action_showHide=QAction('显示/隐藏',self)
+		action_showHide=QAction('显示/隐藏(F7)',self)
 		action_showHide.triggered.connect(lambda:self.switchVisible(self))
 		action_Settings=QAction('设置',self)
 		action_Settings.triggered.connect(lambda:self.switchVisible(self.settingWindow))
@@ -128,7 +131,7 @@ class MyApp(QtWidgets.QMainWindow):
 		# self.roomName.move(0,0)
 		# self.roomName.setBackgroundVisible(False)
 		self.createBtn=QPushButton("创建/进入")
-		self.hideBtn=QPushButton('隐藏本设置窗口(F7)')
+		self.hideBtn=QPushButton('隐藏本设置窗口')
 		self.hideBtn.clicked.connect(lambda:self.switchVisible(self.settingWindow))
 		# self.createBtn.resize(50,20)
 		# self.move(0,100)
@@ -144,7 +147,7 @@ class MyApp(QtWidgets.QMainWindow):
 		self.settingWindow.setLayout(settingLayout)
 		# Qt.Tool的作用是  不在任务栏显示
 		self.settingWindow.setWindowFlags(Qt.FramelessWindowHint|Qt.Tool\
-			|Qt.X11BypassWindowManagerHint)
+			|Qt.X11BypassWindowManagerHint|Qt.Popup)
 		self.roomName.show()
 		self.createBtn.show()
 		self.settingWindow.resize(160,26)
@@ -201,6 +204,8 @@ class MyApp(QtWidgets.QMainWindow):
 		self.trayIcon.activated.connect(self.trayClick)
 
 	def switchVisible(self,handle):
+		if(handle.isHidden()):
+			handle.activateWindow()
 		handle.setHidden(not handle.isHidden())
 
 	def trayClick(self,reason):
@@ -263,11 +268,11 @@ class MyApp(QtWidgets.QMainWindow):
 		r.encoding='utf-8'
 		self.fireABullet(r.text)
 		# print(r.encoding)
-
-		# 开始自动获取服务器上的消息内容
-		self.pullTimer=QTimer()
-		self.pullTimer.start(1000)
-		self.pullTimer.timeout.connect(self.pullMsg)
+		if(len(r.text)==7):
+			# 开始自动获取服务器上的消息内容
+			self.pullTimer=QTimer()
+			self.pullTimer.start(1000)
+			self.pullTimer.timeout.connect(self.pullMsg)
 		# print(r.content)
 		# print(r.text)
 
@@ -290,7 +295,8 @@ class MyApp(QtWidgets.QMainWindow):
 				self.topLeft=self.frameGeometry().topLeft()
 				self.isResize=True
 			else:
-				self.isDrag=True
+				if(not self.Locked):
+					self.isDrag=True
 		# else:
 		# 	if e.button()==Qt.RightButton:
 		# 		self.exitApp()
@@ -332,13 +338,17 @@ class MyApp(QtWidgets.QMainWindow):
 	def resizeEvent(self,e):
 		GLOBAL.WINDOWWIDTH=self.width()
 		GLOBAL.WINDOWHEIGHT=self.height()
+		# self.screenBuffer=QBitmap(GLOBAL.WINDOWWIDTH,GLOBAL.WINDOWHEIGHT)
+		# self.bufferPainter=QPainter(self.screenBuffer)
 		# print('resized')
-		self.repaint()
+		# self.repaint()
 		e.accept()
 
 	def paintEvent(self,e):
 		# Get the Painter
 		painter=QPainter(self)
+		font=QFont('黑体',GLOBAL.BULLETFONTSIZE,QFont.Bold)
+		painter.setFont(font)
 		#Draw a semi-Transparent rect whose size is the same with this window
 		if(self.IsMouseHover and (not self.Locked)):
 			painter.fillRect(0,0,GLOBAL.WINDOWWIDTH,GLOBAL.WINDOWHEIGHT\
@@ -346,9 +356,11 @@ class MyApp(QtWidgets.QMainWindow):
 		# painter.setBackground(QBrush(QColor(123,222,123,122)))
 		#画所有bullet
 		for b in self.bullets:
-			if(b.draw(painter)):
+			b.draw(painter)
+		for b in self.bullets:
+			if(b.IsExpired):
 				self.bullets.remove(b)
-				# pass
+		# painter.drawPicture(0,0,self.picture)
 		# painter.drawText(30,100,"Hello this is a PyQt5 App我也会说中文")
 		return super(MyApp,self).paintEvent(e)
 

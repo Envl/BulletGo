@@ -25,6 +25,7 @@ class Bullet:
 		self.Text=Text
 		self.Color=Color
 		self.Duration=Duration*1000 #单位是毫秒,输入的是秒
+		self.IsExpired=False
 
 	"""this method must be called when this 
 		bullet is ready to shoot at the first time
@@ -34,24 +35,22 @@ class Bullet:
 		self.elapsedTimer.start() #start time
 		self.StartPosition=QPoint(GLOBAL.WINDOWWIDTH+random.randrange(200,500,20),\
 			(Bullet.Height+(Bullet.Count%(GLOBAL.WINDOWHEIGHT//Bullet.Height))*Bullet.Height))
-		self.EndPosition=QPoint(-1000 ,self.StartPosition.y())
+		self.EndPosition=QPoint(-2000 ,self.StartPosition.y())
 	"""Draw this bullet at position x,y ,use painter
 		Returns True indicates this bullet is out of screen
 	"""
 	def draw(self,painter):
 		ratio=self.elapsedTimer.elapsed()/self.Duration
 		if(ratio>0.9):
-			return True
+			self.IsExpired=True
 		# pos=ratio*self.EndPosition+(1-ratio)*self.StartPosition
 		pos=QPoint(ratio*self.EndPosition.x()+(1-ratio)*self.StartPosition.x(),self.StartPosition.y())
 		#这里需要插入绘制字体阴影的代码
 		#
-		painter.save()
-		font=QFont('黑体',GLOBAL.BULLETFONTSIZE,QFont.Bold)
-		painter.setFont(font)
 		# font.setFixedPitch(True)
 		# painter.setFont(font)
-		painter.drawText(pos+QPoint(2,1),self.Text)
+		painter.save()
+		painter.drawText(pos+QPoint(2,2),self.Text)
 		painter.setPen(QPen(self.Color))
 		painter.drawText(pos,self.Text)
 		painter.restore()

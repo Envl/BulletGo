@@ -15,11 +15,11 @@ from PyQt5.QtGui import QPainter
 from PyQt5.QtGui import QColor 
 from PyQt5.QtGui import QPolygon
 #from PyQt5.QtCore import SIGNAL as signal
-qtCreatorFile="ui.ui"
+# qtCreatorFile="ui.ui"
 
-Ui_MainWindow, QtBaseClass=uic.loadUiType(qtCreatorFile)
+# Ui_MainWindow, QtBaseClass=uic.loadUiType(qtCreatorFile)
  
-class Clock(QtWidgets.QMainWindow, Ui_MainWindow):
+class Clock(QtWidgets.QMainWindow):
     '''
     classdocs
     '''
