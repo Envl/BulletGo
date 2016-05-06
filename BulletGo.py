@@ -22,15 +22,20 @@ import _thread
 # Ui_MainWindow, QtBaseClass=uic.loadUiType(qtCreatorFile)
 
 # class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
+
+#本类继承自QtWidgets中的QMainWindow类
 class MyApp(QtWidgets.QMainWindow):
 	mouseLeaveTimer=0
 
 	def __init__(self):
-		QtWidgets.QMainWindow.__init__(self)
 		# Ui_MainWindow.__init__(self)
 		#自己有__init__函数时,不会默认调用基类的__init__函数
 		# 因为这里重写了__init__将基类的覆盖掉了,故需要主动调用之
-		super(MyApp,self).__init__()
+		
+		# QtWidgets.QMainWindow.__init__(self) 
+		# super(MyApp,self).__init__()
+		#上面两句的作用是相同的,下面这句是python3的新写法
+		super().__init__()
 		# 	Get the Screen size
 		self.screenWidth=QDesktopWidget().availableGeometry().width()
 		self.screenHeight=QDesktopWidget().availableGeometry().height()
@@ -107,13 +112,14 @@ class MyApp(QtWidgets.QMainWindow):
 		self.setWindowTitle("BulletGo")
 		sizeGrip=QtWidgets.QSizeGrip(self)
 		self.setWindowFlags(Qt.FramelessWindowHint\
-			|Qt.WindowStaysOnTopHint|Qt.SubWindow\
-			|Qt.Tool|Qt.X11BypassWindowManagerHint)
+			|Qt.WindowStaysOnTopHint|Qt.Window|\
+			Qt.X11BypassWindowManagerHint)
 		#Plan A
 		self.setAttribute(Qt.WA_TranslucentBackground,True)
 		#这一句是给Mac系统用的,防止它绘制(很黯淡的)背景
 		self.setAutoFillBackground(False)
 		QSizeGrip(self).setVisible(True)
+		sizeGrip.setVisible(True)
 		#Plan B  失败
 		# palette=QPalette()
 		# color=QColor(190, 230, 250)
@@ -220,6 +226,7 @@ class MyApp(QtWidgets.QMainWindow):
 		self.Locked=not self.Locked
 
 	def genQColorFromStr(self,color):
+		# print(color)
 		return{
 			'white':GLOBAL.WHITE,
 			'green':GLOBAL.GREEN,
@@ -230,7 +237,8 @@ class MyApp(QtWidgets.QMainWindow):
 			'blue':GLOBAL.BLUE,
 			'yellow':GLOBAL.YELLOW,
 			'cyan':GLOBAL.CYAN,
-			'orange':GLOBAL.ORANGE
+			'orange':GLOBAL.ORANGE,
+			'':GLOBAL.ORANGE
 		}[color]
 
 	def preProcessText(self,string):
@@ -271,7 +279,7 @@ class MyApp(QtWidgets.QMainWindow):
 		if(len(r.text)==7):
 			# 开始自动获取服务器上的消息内容
 			self.pullTimer=QTimer()
-			self.pullTimer.start(1000)
+			self.pullTimer.start(2000)
 			self.pullTimer.timeout.connect(self.pullMsg)
 		# print(r.content)
 		# print(r.text)
