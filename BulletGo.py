@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt,QObject,QUrl
 from PyQt5.QtCore import QPoint,QByteArray
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPainter,QFont
-from PyQt5.QtGui import QColor,QPicture
+from PyQt5.QtGui import QColor#,QPicture
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QSystemTrayIcon,QDesktopWidget,QHBoxLayout,QVBoxLayout
 from PyQt5.QtWidgets import QPushButton,QPlainTextEdit,QAction,QWidget,QLineEdit
@@ -15,6 +15,7 @@ from PyQt5.QtNetwork import QNetworkRequest,QNetworkAccessManager
 import requests,time
 from multiprocessing.dummy import Pool as ThreadPool
 import _thread
+from socketIO_client import SocketIO, LoggingNamespace
 # from LabelButton import labelButton
 
 # qtCreatorFile="ui.ui"
@@ -48,7 +49,7 @@ class MyApp(QtWidgets.QMainWindow):
 
 		#
 		# self.setupUi(self)
-		self.initUI();
+		self.initUI()
 		#用来控制半透明的bg面板自动消失
 		self.timer=QTimer()
 		self.timer.start(30)
@@ -69,10 +70,9 @@ class MyApp(QtWidgets.QMainWindow):
 		self.savedName=''
 		# self.screenBuffer=QBitmap(GLOBAL.WINDOWWIDTH,GLOBAL.WINDOWHEIGHT)
 		# self.bufferPainter=QPainter(self.screenBuffer)
-		self.picture=QPicture()
+		# self.picture=QPicture()
 		# 建立connection和slot的连接
 		self.createConnections()
-
 
 	def initUI(self):
 		#构建托盘
@@ -181,6 +181,20 @@ class MyApp(QtWidgets.QMainWindow):
 		# self.danmakuEditText.show()
 
 
+	def connect2Server(self):
+		self.socketio=SocketIO('127.0.0.1',180,LoggingNamespace)
+		self.registerEvents()
+		_thread.start_new_thread(self.socketio.wait,())
+
+	def registerEvents(self):
+		self.socketio.on('create_rsp',lambda rsp:print(rsp))
+		self.socketio.on('bullet',lambda msg:print(msg))
+		self.socketio.on('chat message',lambda msg:print(msg))
+
+	# 连接到nodejs建立的服务器
+	def createRoom_Nodejs(self,name):
+		self.connect2Server()
+		self.socketio.emit('create_room',name)
 
 	def fireBtn(self):
 		txt=self.danmakuEditText.toPlainText()
@@ -204,7 +218,9 @@ class MyApp(QtWidgets.QMainWindow):
 	def createConnections(self):
 		self.timer.timeout.connect(self.update)
 		# self.btnFire.clicked.connect(self.fireBtn)
-		self.createBtn.clicked.connect(self.createRoom)
+		self.createBtn.clicked.connect(\
+			lambda:self.createRoom_Nodejs\
+				(self.roomName.toPlainText()))
 		# self.btnLock.clicked.connect(self.switchLock)
 		# self.btnLock.clicked.connect(self.pullMsg)
 		self.trayIcon.activated.connect(self.trayClick)
@@ -225,6 +241,8 @@ class MyApp(QtWidgets.QMainWindow):
 	def switchLock(self):
 		self.Locked=not self.Locked
 
+	'''这个神奇的用法, 在js中也可用'''
+	'''博客搞好后, 这个要单独写个文章'''
 	def genQColorFromStr(self,color):
 		# print(color)
 		return{
@@ -266,10 +284,9 @@ class MyApp(QtWidgets.QMainWindow):
 	def pullMsg(self):
 		_thread.start_new_thread(self.realPullMsg,())
 
+	'''---[deprecated]---'''
 	def createRoom(self):
 		#编码问题实在天坑!!!
-		# postData='#0'.encode('utf-8')
-		# postData=self.roomName.toPlainText()
 		self.savedName=self.roomName.toPlainText().encode('utf-8')#保存自己的房间号
 		postData=self.roomName.toPlainText().encode('utf-8')
 		r = requests.post('http://danmaku.applinzi.com/createroom.php',data=postData)
@@ -283,6 +300,7 @@ class MyApp(QtWidgets.QMainWindow):
 			self.pullTimer.timeout.connect(self.pullMsg)
 		# print(r.content)
 		# print(r.text)
+
 
 	def closeEvent(self,e):
 		e.accept()
