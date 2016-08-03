@@ -71,8 +71,10 @@ class MyApp(QtWidgets.QMainWindow):
 		# self.screenBuffer=QBitmap(GLOBAL.WINDOWWIDTH,GLOBAL.WINDOWHEIGHT)
 		# self.bufferPainter=QPainter(self.screenBuffer)
 		# self.picture=QPicture()
-		# 建立connection和slot的连接
+		# 建立connection和slot的回调连接
 		self.createConnections()
+		# 连接到nodejs建立的服务器
+		self.connect2Server()
 
 	def initUI(self):
 		#构建托盘
@@ -138,7 +140,8 @@ class MyApp(QtWidgets.QMainWindow):
 		# self.roomName.setBackgroundVisible(False)
 		self.createBtn=QPushButton("创建/进入")
 		self.hideBtn=QPushButton('隐藏本设置窗口')
-		self.hideBtn.clicked.connect(lambda:self.switchVisible(self.settingWindow))
+		self.hideBtn.clicked.connect(self.joinRoom)
+			# lambda:self.switchVisible(self.settingWindow))
 		# self.createBtn.resize(50,20)
 		# self.move(0,100)
 		# self.d
@@ -180,20 +183,30 @@ class MyApp(QtWidgets.QMainWindow):
 		# self.danmakuEditText.setBackgroundVisible(False)
 		# self.danmakuEditText.show()
 
+	def joinRoom(self):
+		name=self.roomName.toPlainText()
+		self.socketio.emit('join',name)
 
 	def connect2Server(self):
-		self.socketio=SocketIO('127.0.0.1',180,LoggingNamespace)
+		self.socketio=SocketIO('115.159.102.76',80,LoggingNamespace)
 		self.registerEvents()
+		# 开新线程监听服务器发来的消息,否则主线程被阻塞
 		_thread.start_new_thread(self.socketio.wait,())
 
 	def registerEvents(self):
-		self.socketio.on('create_rsp',lambda rsp:print(rsp))
-		self.socketio.on('bullet',lambda msg:print(msg))
-		self.socketio.on('chat message',lambda msg:print(msg))
+		self.socketio.on('create_rsp',lambda rsp:self.handleIncomeBullet(rsp))
+		self.socketio.on('bullet',lambda msg:self.handleIncomeBullet(msg))
+		self.socketio.on('control_msg',lambda msg:print\
+			('---control message---  : '+msg))
+		self.socketio.on('sys_notification',lambda msg:print\
+			('---system notification---  : '+msg))
 
-	# 连接到nodejs建立的服务器
+	def handleIncomeBullet(self,bulletMsg):
+		textsAndInfo=self.preProcessText(bulletMsg)
+		if(len(textsAndInfo)>1):
+			self.fireABullet(textsAndInfo[0],self.genQColorFromStr(textsAndInfo[1]))
+
 	def createRoom_Nodejs(self,name):
-		self.connect2Server()
 		self.socketio.emit('create_room',name)
 
 	def fireBtn(self):
@@ -262,6 +275,7 @@ class MyApp(QtWidgets.QMainWindow):
 	def preProcessText(self,string):
 		return string.split('`<')
 
+	'''---[deprecated]---'''
 	def realPullMsg(self):
 		url='http://danmaku.applinzi.com/message.php'
 		r =  requests.post(url,data=self.savedName)
@@ -281,6 +295,7 @@ class MyApp(QtWidgets.QMainWindow):
 				self.fireABullet(textsAndInfo[i],self.genQColorFromStr(textsAndInfo[i+1]))
 				i+=2
 
+	'''---[deprecated]---'''
 	def pullMsg(self):
 		_thread.start_new_thread(self.realPullMsg,())
 
