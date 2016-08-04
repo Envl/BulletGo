@@ -188,7 +188,7 @@ class MyApp(QtWidgets.QMainWindow):
 		self.socketio.emit('join',name)
 
 	def connect2Server(self):
-		self.socketio=SocketIO('115.159.102.76',80,LoggingNamespace)
+		self.socketio=SocketIO('115.159.102.76/bulletgo_client',80,LoggingNamespace)
 		self.registerEvents()
 		# 开新线程监听服务器发来的消息,否则主线程被阻塞
 		_thread.start_new_thread(self.socketio.wait,())
